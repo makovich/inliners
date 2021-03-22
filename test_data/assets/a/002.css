@@ -1,0 +1,7 @@
+p {
+    background-image: url(img/i.bmp);
+}
+body {
+    background-image: url('not-exists.img');
+    background-image: url(img/i.gif);
+}

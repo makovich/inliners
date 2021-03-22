@@ -1,0 +1,14 @@
+p.xxx               {
+  background-image:              url(          img/i.bmp);
+
+
+    background-image: url(img/i.gif);
+
+
+
+
+
+
+background-image: url('not-exists.img')
+}
+
