@@ -1,0 +1,77 @@
+language: rust
+cache: cargo
+
+env:
+  global:
+    - FEATURES=--features=esbuild
+    - BIN_NAME=inline
+
+jobs:
+  include:
+    - name: "Windows"
+      os: windows
+      env:
+      - TARGET=x86_64-pc-windows-msvc
+      - SUFFIX=-x86_64-windows-msvc
+      install:
+      - choco install -y golang
+      - export PATH="$PROGRAMFILES\Go\bin":$PATH
+      - go version
+
+    - name: "Linux"
+      os: linux
+      dist: xenial
+      env:
+      - TARGET=x86_64-unknown-linux-musl
+      - SUFFIX=-x86_64-linux-musl-no-esbuild
+      # turning off esbuild :(
+      - FEATURES=
+      install:
+      - sudo add-apt-repository -y ppa:longsleep/golang-backports
+      - sudo apt update
+      - sudo apt install -y golang-go musl-tools
+      - rustup target add x86_64-unknown-linux-musl
+
+    - name: "OSX"
+      os: osx
+      env:
+      - TARGET=x86_64-apple-darwin
+      - SUFFIX=-x86_64-osx
+      install:
+      - HOMEBREW_NO_AUTO_UPDATE=1 brew install go
+      - go version
+
+before_install:
+  - rustup self update
+
+install: skip
+
+script:
+  - set -e
+  - cargo test --verbose --release --target $TARGET $FEATURES
+  - cargo build --verbose --release --target $TARGET $FEATURES
+  - cargo run --release --target $TARGET $FEATURES -- --help
+
+before_deploy:
+  - target/$TARGET/release/$BIN_NAME --help
+  - tar -C target/$TARGET/release -vczf $BIN_NAME-$TRAVIS_TAG$SUFFIX.tar.gz $BIN_NAME
+
+deploy:
+  provider: releases
+  api_key:
+    secure: "PnXxi2LjH/W9BFIIY4L35XIl+wFzlKPjq2kDuXs6UMtntf+o5cIleNvYXvQYWmAbQ5r1bG5FjzEGzgzfcoN74VUPLFxyLV/OyGhzY9Z8I5Jyhq1e9nM7jgZZbf0NkgxSXPzVhDSrDkPikTOLS6rNLX0SQh69Gl8E1wgN5FjURAuJYIMXIBARHsEMMGGB/tzZrLpbxgFC7bQ2Mt3qElTq9iqr5IwSEL2J911dZ73iAycCjcgOOootkUoebQ9gciEpOaVgPofRAQvyV5qSzHnKc9RTnXHKPmYLa7d3vxEDtAU6AwushIRn+7+Hy9uOGeD/HOQa2SEhAh1llbpdcMhIwrvF/PHbqyo1dzCgyr4MlFWZPY3N62zZDmAqkVVRMvHeH23LU8V95qEEkKSNs54PE6BBXa94YpwAinp0QcXyRpJLTsZ7zo1ZBoB5ULDyOqWXIMHIjgJt6qwvftIRNjqYnu6p/LiWkxDHi/Sr8yWX3yT5i/q8bRfHg8yg+VEwd201evBfh9xYGUcb4EoV74zQVHIs4Zi91rC/UJxAn+lRr6pwP2TOvj+BX3FwxcggRg1Q9JWo+dGQfaYMrGNrgyIaJqfvbxw9j9sMdcXZpOP2hFFF3G0wQffeiDp0C1Eots5HdILDRuOJM4TJicR2z/oZ1WGmDhONHI5yS6w68ZzyFPQ="
+  file: $BIN_NAME-$TRAVIS_TAG$SUFFIX.*
+  file_glob: true
+  skip_cleanup: true
+  on:
+    tags: true
+
+branches:
+  only:
+    # release tags
+    - /^v\d+\.\d+\.\d+.*$/
+    - master
+
+notifications:
+  email:
+    on_success: never
