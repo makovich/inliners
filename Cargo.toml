@@ -14,7 +14,7 @@ keywords = [
 ]
 version = "0.5.0"
 authors = ["paul makovich <paul@makovi.ch>"]
-license = "MIT/Unlicensed"
+license = "MIT OR Unlicense"
 edition = "2018"
 
 [[bin]]
